@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -93,8 +94,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () {
-              // TODO: hook to FirebaseAuth signOut when integrated
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await FirebaseAuth.instance.signOut();
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Logged out')),
+                );
+              } catch (_) {}
             },
             icon: const Icon(Icons.logout),
             label: const Text('Logout'),
