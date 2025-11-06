@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'generated/l10n/app_localizations.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/post_job_screen.dart';
@@ -82,6 +84,27 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
       debugShowCheckedModeBanner: false,
       title: 'KaamBolo Mobile',
       theme: theme,
+      locale: Locale(_languageCode),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('hi'),
+        Locale('ta'),
+        Locale('te'),
+        Locale('bn'),
+        Locale('mr'),
+        Locale('pa'),
+        Locale('ml'),
+        Locale('kn'),
+        Locale('gu'),
+        Locale('ur'),
+        Locale('or'),
+      ],
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -91,6 +114,7 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
           if (snapshot.data == null) {
             return const _PhoneAuthScaffold();
           }
+          final t = AppLocalizations.of(context);
           return Scaffold(
             body: IndexedStack(
               index: _selectedIndex,
@@ -99,11 +123,11 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-              destinations: const [
-                NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-                NavigationDestination(icon: Icon(Icons.post_add_outlined), selectedIcon: Icon(Icons.post_add), label: 'Post'),
-                NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-                NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+              destinations: [
+                NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome),
+                NavigationDestination(icon: const Icon(Icons.post_add_outlined), selectedIcon: const Icon(Icons.post_add), label: t.navPost),
+                NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
+                NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: t.navSettings),
               ],
             ),
           );
@@ -196,6 +220,7 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: ConstrainedBox(
@@ -203,35 +228,35 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Login with Phone OTP', style: Theme.of(context).textTheme.titleLarge),
+            Text(t.loginTitle, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Phone number (e.g. +91XXXXXXXXXX)',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: t.phonePlaceholder,
               ),
             ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _sendingCode ? null : _sendCode,
-              child: _sendingCode ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Send OTP'),
+              child: _sendingCode ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t.sendOtp),
             ),
             if (_verificationId != null) ...[
               const SizedBox(height: 24),
               TextField(
                 controller: _codeController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Enter OTP',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: t.enterOtp,
                 ),
               ),
               const SizedBox(height: 12),
               FilledButton.tonal(
                 onPressed: _verifying ? null : _verifyCode,
-                child: _verifying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Verify & Continue'),
+                child: _verifying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t.verifyContinue),
               ),
             ],
             if (_error != null) ...[

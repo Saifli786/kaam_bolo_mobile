@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../generated/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -62,19 +63,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
+    final t = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(t.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
-            title: const Text('Voice Assistant (KaamBolo Mitra)'),
+            title: Text(t.voiceAssistant),
             value: _voiceEnabled,
             onChanged: (v) => setState(() => _voiceEnabled = v),
-            subtitle: const Text('Enable mic-based assistant'),
+            subtitle: Text(t.voiceSubtitle),
           ),
           const SizedBox(height: 8),
-          const Text('Language'),
+          Text(t.language),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _languageCode,
@@ -90,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _save,
-            child: const Text('Save Settings'),
+            child: Text(t.saveSettings),
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
@@ -98,13 +100,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final messenger = ScaffoldMessenger.of(context);
               try {
                 await FirebaseAuth.instance.signOut();
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Logged out')),
-                );
+                messenger.showSnackBar(SnackBar(content: Text(t.loggedOut)));
               } catch (_) {}
             },
             icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
+            label: Text(t.logout),
           ),
         ],
       ),

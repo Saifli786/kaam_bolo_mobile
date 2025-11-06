@@ -1,0 +1,22 @@
+{
+  "appTitle": "KaamBolo Mobile",
+  "navHome": "Home",
+  "navPost": "Post",
+  "navProfile": "Profile",
+  "navSettings": "Settings",
+  "loginTitle": "Login with Phone OTP",
+  "phonePlaceholder": "Phone number (e.g. +91XXXXXXXXXX)",
+  "sendOtp": "Send OTP",
+  "enterOtp": "Enter OTP",
+  "verifyContinue": "Verify & Continue",
+  "settingsTitle": "Settings",
+  "voiceAssistant": "Voice Assistant (KaamBolo Mitra)",
+  "voiceSubtitle": "Enable mic-based assistant",
+  "language": "Language",
+  "saveSettings": "Save Settings",
+  "logout": "Logout",
+  "loggedOut": "Logged out",
+  "settingsSaved": "Settings saved"
+}
+
+

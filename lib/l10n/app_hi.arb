@@ -1,0 +1,22 @@
+{
+  "appTitle": "कामबोलो मोबाइल",
+  "navHome": "होम",
+  "navPost": "पोस्ट",
+  "navProfile": "प्रोफ़ाइल",
+  "navSettings": "सेटिंग्स",
+  "loginTitle": "फोन ओटीपी से लॉगिन",
+  "phonePlaceholder": "फ़ोन नंबर (जैसे +91XXXXXXXXXX)",
+  "sendOtp": "ओटीपी भेजें",
+  "enterOtp": "ओटीपी दर्ज करें",
+  "verifyContinue": "सत्यापित करें और आगे बढ़ें",
+  "settingsTitle": "सेटिंग्स",
+  "voiceAssistant": "वॉइस असिस्टेंट (कामबोलो मित्र)",
+  "voiceSubtitle": "माइक आधारित असिस्टेंट सक्षम करें",
+  "language": "भाषा",
+  "saveSettings": "सेटिंग्स सेव करें",
+  "logout": "लॉगआउट",
+  "loggedOut": "लॉगआउट हो गया",
+  "settingsSaved": "सेटिंग्स सेव हो गई"
+}
+
+
