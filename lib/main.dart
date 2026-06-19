@@ -256,7 +256,7 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
         );
       }
     } catch (e) {
-      setState(() => _error = e.toString().contains('message') ? e.toString() : 'Failed to send code');
+      setState(() => _error = e.toString());
     } finally {
       setState(() => _sendingCode = false);
     }

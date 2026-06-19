@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/job_model.dart';
+import '../models/application_model.dart';
 
 import '../models/job_model.dart';
 import '../services/firestore_service.dart';
@@ -79,6 +83,58 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _showJobDetails(Job job) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(job.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('${job.skillRequired} • ₹${job.pay.toStringAsFixed(0)} • ${job.duration}', style: const TextStyle(color: Colors.grey, fontSize: 16)),
+              const SizedBox(height: 16),
+              const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text(job.description.isEmpty ? 'No description provided.' : job.description),
+              const SizedBox(height: 32),
+              FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                onPressed: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please log in first')));
+                    return;
+                  }
+                  try {
+                    final app = ApplicationModel(
+                      id: '',
+                      jobId: job.id,
+                      workerId: user.uid,
+                      appliedAt: DateTime.now(),
+                      status: 'pending',
+                    );
+                    await FirestoreService.instance.createApplication(app);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application Sent!')));
+                  } catch (e) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                },
+                child: const Text('Apply Now'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -112,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: Text(job.title),
                 subtitle: Text('${job.skillRequired} • ₹${job.pay.toStringAsFixed(0)} • ${job.duration}'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {},
+                onTap: () => _showJobDetails(job),
               ),
             );
           },
