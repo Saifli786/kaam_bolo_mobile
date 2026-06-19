@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -164,10 +165,21 @@ class _PhoneAuthScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: _PhoneAuthForm(),
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: const SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: _PhoneAuthForm(),
+            ),
+          ),
         ),
       ),
     );
@@ -185,37 +197,66 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   String? _verificationId;
+  ConfirmationResult? _confirmationResult;
   bool _sendingCode = false;
   bool _verifying = false;
   String? _error;
 
+  String _formatPhoneNumber(String input) {
+    String phone = input.trim();
+    if (phone.isEmpty) return phone;
+    // Strip non-numeric characters for simple validation, except '+'
+    if (!phone.startsWith('+')) {
+      if (phone.length == 10) {
+        phone = '+91$phone';
+      } else {
+        phone = '+$phone';
+      }
+    }
+    return phone;
+  }
+
   Future<void> _sendCode() async {
+    final formattedPhone = _formatPhoneNumber(_phoneController.text);
+    if (formattedPhone.length < 10) {
+      setState(() => _error = 'Please enter a valid phone number');
+      return;
+    }
+
     setState(() {
       _sendingCode = true;
       _error = null;
     });
+
     try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: _phoneController.text.trim(),
-        verificationCompleted: (credential) async {
-          try {
-            await FirebaseAuth.instance.signInWithCredential(credential);
-          } catch (_) {}
-        },
-        codeSent: (verificationId, _) {
-          setState(() {
-            _verificationId = verificationId;
-          });
-        },
-        verificationFailed: (e) {
-          setState(() => _error = e.message);
-        },
-        codeAutoRetrievalTimeout: (verificationId) {
-          setState(() => _verificationId = verificationId);
-        },
-      );
+      if (kIsWeb) {
+        _confirmationResult = await FirebaseAuth.instance.signInWithPhoneNumber(formattedPhone);
+        setState(() {
+          _verificationId = 'web-verification'; // Just a flag to show the OTP field
+        });
+      } else {
+        await FirebaseAuth.instance.verifyPhoneNumber(
+          phoneNumber: formattedPhone,
+          verificationCompleted: (credential) async {
+            try {
+              await FirebaseAuth.instance.signInWithCredential(credential);
+            } catch (_) {}
+          },
+          codeSent: (verificationId, _) {
+            setState(() {
+              _verificationId = verificationId;
+            });
+          },
+          verificationFailed: (e) {
+            setState(() => _error = e.message ?? 'Verification failed');
+          },
+          codeAutoRetrievalTimeout: (verificationId) {
+            setState(() => _verificationId = verificationId);
+          },
+        );
+      }
     } catch (e) {
-      setState(() => _error = 'Failed to send code');
+      setState(() => _error = e.toString().contains('message') ? e.toString() : 'Failed to send code');
     } finally {
       setState(() => _sendingCode = false);
     }
@@ -228,13 +269,18 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
       _error = null;
     });
     try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: _codeController.text.trim(),
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final smsCode = _codeController.text.trim();
+      if (kIsWeb && _confirmationResult != null) {
+        await _confirmationResult!.confirm(smsCode);
+      } else {
+        final credential = PhoneAuthProvider.credential(
+          verificationId: _verificationId!,
+          smsCode: smsCode,
+        );
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      }
     } catch (e) {
-      setState(() => _error = 'Invalid code');
+      setState(() => _error = 'Invalid code or verification failed');
     } finally {
       setState(() => _verifying = false);
     }
@@ -246,46 +292,113 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(t.loginTitle, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: t.phonePlaceholder,
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _sendingCode ? null : _sendCode,
-              child: _sendingCode ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t.sendOtp),
-            ),
-            if (_verificationId != null) ...[
-              const SizedBox(height: 24),
-              TextField(
-                controller: _codeController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: t.enterOtp,
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Card(
+          elevation: 12,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          color: Colors.white.withOpacity(0.95),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.work_outline, size: 64, color: Color(0xFFFF6F00)),
+                const SizedBox(height: 16),
+                Text(
+                  t.loginTitle, 
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  )
                 ),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.tonal(
-                onPressed: _verifying ? null : _verifyCode,
-                child: _verifying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t.verifyContinue),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: Colors.red)),
-            ],
-          ],
+                const SizedBox(height: 8),
+                Text(
+                  "Find your next job with your voice",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(fontSize: 16, letterSpacing: 1.5),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone),
+                    prefixText: '+91 ',
+                    prefixStyle: const TextStyle(color: Colors.black87, fontSize: 16, letterSpacing: 1.5),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: t.phonePlaceholder,
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _sendingCode ? null : _sendCode,
+                    child: _sendingCode 
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                        : Text(t.sendOtp, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                if (_verificationId != null) ...[
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _codeController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 24, letterSpacing: 4, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: t.enterOtp,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.tonal(
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _verifying ? null : _verifyCode,
+                      child: _verifying 
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) 
+                          : Text(t.verifyContinue, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade700))),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
