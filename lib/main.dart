@@ -11,18 +11,23 @@ import 'screens/post_job_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 
+bool _isFirebaseInitialized = false;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
+    _isFirebaseInitialized = true;
   } catch (_) {
     // Firebase will be initialized once configuration files are added.
+    _isFirebaseInitialized = false;
   }
-  runApp(const KaamBoloApp());
+  runApp(KaamBoloApp(isFirebaseInitialized: _isFirebaseInitialized));
 }
 
 class KaamBoloApp extends StatefulWidget {
-  const KaamBoloApp({super.key});
+  final bool isFirebaseInitialized;
+  const KaamBoloApp({super.key, required this.isFirebaseInitialized});
 
   @override
   State<KaamBoloApp> createState() => _KaamBoloAppState();
@@ -105,7 +110,20 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
         Locale('ur'),
         Locale('or'),
       ],
-      home: StreamBuilder<User?>(
+      home: !widget.isFirebaseInitialized
+          ? const Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text(
+                    'Firebase is not configured.\nPlease run "flutterfire configure" in the terminal and restart the app.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                ),
+              ),
+            )
+          : StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
