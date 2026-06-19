@@ -31,10 +31,28 @@ class FirestoreService {
     return AppUser.fromMap(doc.id, doc.data()!);
   }
 
+  Stream<AppUser?> watchUser(String id) {
+    return _users.doc(id).snapshots().map((d) => d.exists ? AppUser.fromMap(d.id, d.data()!) : null);
+  }
+
   // Jobs
   Future<String> createJob(Job job) async {
     final ref = await _jobs.add(job.toMap());
     return ref.id;
+  }
+
+  Stream<List<Job>> watchJobsByEmployer(String employerId) {
+    return _jobs.where('employer_id', isEqualTo: employerId).orderBy('created_at', descending: true).snapshots().map(
+          (s) => s.docs.map((d) => Job.fromMap(d.id, d.data())).toList(),
+        );
+  }
+
+  Future<void> updateJobStatus(String jobId, String status) async {
+    await _jobs.doc(jobId).update({'status': status});
+  }
+
+  Future<void> deleteJob(String jobId) async {
+    await _jobs.doc(jobId).delete();
   }
 
   Stream<List<Job>> watchJobs() {
@@ -77,10 +95,39 @@ class FirestoreService {
         );
   }
 
+  Stream<List<ApplicationModel>> watchApplicationsForJob(String jobId) {
+    return _applications.where('job_id', isEqualTo: jobId).orderBy('applied_at', descending: true).snapshots().map(
+          (s) => s.docs.map((d) => ApplicationModel.fromMap(d.id, d.data())).toList(),
+        );
+  }
+
+  Future<void> updateApplicationStatus(String appId, String status) async {
+    await _applications.doc(appId).update({'status': status});
+  }
+
   // Ratings
   Future<String> createRating(RatingModel rating) async {
     final ref = await _ratings.add(rating.toMap());
     return ref.id;
+  }
+
+  // Admin Metrics
+  Stream<int> watchAllUsersCount() {
+    return _users.snapshots().map((s) => s.docs.length);
+  }
+
+  Stream<int> watchAllJobsCount() {
+    return _jobs.snapshots().map((s) => s.docs.length);
+  }
+
+  Stream<int> watchAllApplicationsCount() {
+    return _applications.snapshots().map((s) => s.docs.length);
+  }
+
+  Stream<List<Job>> watchAllJobs() {
+    return _jobs.orderBy('created_at', descending: true).limit(50).snapshots().map(
+          (s) => s.docs.map((d) => Job.fromMap(d.id, d.data())).toList(),
+        );
   }
 
   // Helpers

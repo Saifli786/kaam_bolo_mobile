@@ -11,6 +11,11 @@ import 'screens/home_screen.dart';
 import 'screens/post_job_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/worker_dashboard.dart';
+import 'screens/employer_dashboard.dart';
+import 'screens/admin_dashboard.dart';
+import 'models/user_model.dart';
+import 'services/firestore_service.dart';
 
 import 'firebase_options.dart';
 
@@ -43,13 +48,6 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
   bool _voiceEnabled = true;
   String _languageCode = 'en';
   bool _prefsLoaded = false;
-
-  final _screens = const [
-    HomeScreen(),
-    PostJobScreen(),
-    ProfileScreen(),
-    SettingsScreen(),
-  ];
 
   @override
   void initState() {
@@ -137,22 +135,61 @@ class _KaamBoloAppState extends State<KaamBoloApp> {
           if (snapshot.data == null) {
             return const _PhoneAuthScaffold();
           }
-          final t = AppLocalizations.of(context);
-          return Scaffold(
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-              destinations: [
-                NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome),
-                NavigationDestination(icon: const Icon(Icons.post_add_outlined), selectedIcon: const Icon(Icons.post_add), label: t.navPost),
-                NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
-                NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: t.navSettings),
-              ],
-            ),
+          return StreamBuilder<AppUser?>(
+            stream: FirestoreService.instance.watchUser(snapshot.data!.uid),
+            builder: (context, userSnapshot) {
+              if (userSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              final appUser = userSnapshot.data;
+              final role = appUser?.role ?? 'worker';
+              
+              List<Widget> screens = [];
+              List<NavigationDestination> destinations = [];
+              final t = AppLocalizations.of(context);
+              
+              if (role == 'admin') {
+                screens = const [AdminDashboardScreen(), ProfileScreen(), SettingsScreen()];
+                destinations = [
+                  const NavigationDestination(icon: Icon(Icons.admin_panel_settings_outlined), selectedIcon: Icon(Icons.admin_panel_settings), label: 'Admin'),
+                  NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
+                  NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: t.navSettings),
+                ];
+              } else if (role == 'employer') {
+                screens = const [HomeScreen(), EmployerDashboardScreen(), PostJobScreen(), ProfileScreen(), SettingsScreen()];
+                destinations = [
+                  NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome),
+                  const NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Tasks'),
+                  NavigationDestination(icon: const Icon(Icons.post_add_outlined), selectedIcon: const Icon(Icons.post_add), label: t.navPost),
+                  NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
+                  NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: t.navSettings),
+                ];
+              } else {
+                // worker
+                screens = const [HomeScreen(), WorkerDashboardScreen(), ProfileScreen(), SettingsScreen()];
+                destinations = [
+                  NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome),
+                  const NavigationDestination(icon: Icon(Icons.task_outlined), selectedIcon: Icon(Icons.task), label: 'My Tasks'),
+                  NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
+                  NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: t.navSettings),
+                ];
+              }
+              
+              // Ensure selected index is valid
+              int safeIndex = _selectedIndex >= screens.length ? 0 : _selectedIndex;
+
+              return Scaffold(
+                body: IndexedStack(
+                  index: safeIndex,
+                  children: screens,
+                ),
+                bottomNavigationBar: NavigationBar(
+                  selectedIndex: safeIndex,
+                  onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+                  destinations: destinations,
+                ),
+              );
+            },
           );
         },
       ),

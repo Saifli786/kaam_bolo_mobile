@@ -83,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             items: const [
               DropdownMenuItem(value: 'worker', child: Text('Worker (Looking for jobs)')),
               DropdownMenuItem(value: 'employer', child: Text('Employer (Posting jobs)')),
+              DropdownMenuItem(value: 'admin', child: Text('Admin (Manage platform)')),
             ],
             onChanged: (v) => setState(() => _selectedRole = v!),
           ),
