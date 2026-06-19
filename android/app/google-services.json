@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "641685475143",
+    "project_id": "kaambolo-5d8c3",
+    "storage_bucket": "kaambolo-5d8c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641685475143:android:49c4cdede97743fa9c0662",
+        "android_client_info": {
+          "package_name": "com.kaambolo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1AL6D0GiWT4__0D0N1UWKjELcTyMLSKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641685475143:android:050d9f830aaea5b09c0662",
+        "android_client_info": {
+          "package_name": "com.kaambolo.kaam_bolo_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1AL6D0GiWT4__0D0N1UWKjELcTyMLSKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

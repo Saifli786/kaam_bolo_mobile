@@ -11,12 +11,16 @@ import 'screens/post_job_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 
+import 'firebase_options.dart';
+
 bool _isFirebaseInitialized = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     _isFirebaseInitialized = true;
   } catch (_) {
     // Firebase will be initialized once configuration files are added.
